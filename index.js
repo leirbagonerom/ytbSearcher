@@ -1,10 +1,9 @@
-let ytbModule = (function () {
-    let me = {};
-    let ulDatos = "";
+let youtubeModule = (function () {
+    'use strict';
 
-    let searchUrl = "?part=&key=";
+    let htmlData;
 
-    let request = obj => {
+    function httpGet(obj) {
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open(obj.method || "GET", obj.url);
@@ -23,68 +22,110 @@ let ytbModule = (function () {
             xhr.send(obj.body);
         })
     }
-    const ytbService = (function ytbServ() {
-        let apiData = {};
-        apiData.urlbase = "https://www.googleapis.com/youtube/v3/search?";
-        apiData.partParam = "id,snippet";
-        apiData.paramKey = "AIzaSyDVfHu3pMu2SsX9JVICtAHWRK2tpfY2Mpk";
-        apiData.maxResults = 50;
+
+    function init() {
+        function eventSearch() {
+            moduleYoutubeApi.search(this.value);
+            return false;
+        }
+
+        var textInputSearch = document.getElementById('txt-search');
+        textInputSearch.addEventListener('keyup', eventSearch)
+    }
+
+
+    const moduleYoutubeApi = (function ytbServ() {
+
+        let jsonData = [];
+        let requestParams = {};
+        let urlBaseApi = "https://www.googleapis.com/youtube/v3/search?";
+
+        requestParams.part = "id,snippet";
+        requestParams.key = "AIzaSyDVfHu3pMu2SsX9JVICtAHWRK2tpfY2Mpk";
+        requestParams.maxResults = 50;
+        requestParams.q = null;
+
+        function joinSearchParams(q) {
+            let params = '';
+
+            requestParams.q = q || requestParams.q;
+            for (var key in requestParams) {
+                params += "&" + key + "=" + requestParams[key];
+            }
+
+            return params;
+        };
+        
+        function searchYoutube(q) {
+            console.log("retriving data from Youtube!");
+
+            const apiUrl = urlBaseApi + joinSearchParams(q);
+
+            function loadJsonData(response) {
+                console.log('getting response from Youtube!');
+
+                jsonData = JSON.parse(response).items;
+            };
+
+            function catchError(error) {
+                alert('Error, revise la consola para mas información')
+                console.log(error);
+            };
+
+            function loadHtmlData() {
+                console.log('Loading data to HTML');
+    
+                htmlData = document.createElement("ul");
+    
+                let videos = jsonData.filter(function (obj) { return obj.id.videoId; });
+                let ytbPlayerUrl = "https://www.youtube-nocookie.com/embed/";
+    
+                function processItem(item) {
+                    let spanTitle = document.createElement('span');
+                    spanTitle.innerText = item.snippet.title;
+    
+                    let thumbnailVideo = document.createElement('img');
+                    thumbnailVideo.classList.add("img-thumbnail");
+                    thumbnailVideo.src = item.snippet.thumbnails.default.url;
+    
+                    let viewLink = document.createElement("a");
+                    viewLink.innerText = "Ver video";
+                    viewLink.href = ytbPlayerUrl + item.id.videoId;
+                    viewLink.target = '_blank';
+    
+                    let listItem = document.createElement("li");
+                    listItem.classList.add('list-group-item');
+    
+                    listItem.appendChild(thumbnailVideo);
+                    listItem.appendChild(spanTitle);
+                    listItem.appendChild(viewLink);
+    
+                    htmlData.appendChild(listItem);
+                };
+    
+                videos.forEach(processItem);
+    
+                document.getElementById("ul-data").innerHTML = htmlData.innerHTML;
+            };
+
+            httpGet({ url: apiUrl })
+                .then(loadJsonData)
+                .then(loadHtmlData)
+                .catch(catchError);
+        }
+
+        init();
 
         let methods = {};
-        methods.search = function ytbSearch(q) {
-            const apiUrl = apiData.urlbase + "&part=" + apiData.partParam + "&key=" + apiData.paramKey + "&q=" + q + "&maxResults=" + apiData.maxResults
-            request({ url: apiUrl }).then(
-                function (rta) {
-                    this.ulDatos.innerHTML = '';
-                    JSON.parse(rta).items.forEach(renderData);
-                }
-            ).catch(function(err){
-                alert('Error al consultar ytb, revise la consola para mas información')
-                console.log(err);
-            });
-        }
+        methods.search = searchYoutube;
 
-        function renderData(r) {
-            if (r.id.videoId) {
-                let datos = this.ulDatos;
-                let newLi = document.createElement("li");
-                newLi.setAttribute('class', 'list-group-item')
-
-                let spTitle = document.createElement('h6')
-                spTitle.innerText = r.snippet.title;
-                newLi.appendChild(spTitle);
-
-                let newImg = document.createElement('img');
-                newImg.setAttribute('class','img-thumbnail')
-                newImg.src = r.snippet.thumbnails.default.url;
-                newLi.appendChild(newImg);
-
-                let lnk = document.createElement('a')
-                lnk.innerText = "Ver video"
-                lnk.href = "https://www.youtube-nocookie.com/embed/" + r.id.videoId;
-                lnk.target = '_blank'
-                newLi.appendChild(lnk);
-                //newLi.innerText = r.snippet.title;
-                datos.appendChild(newLi);
-            }
-        }
-
-        function init() {
-            this.ulDatos = document.getElementById("ul-data");
-            var txt = document.getElementById('txt-search');
-            txt.addEventListener('keyup', function () {
-                console.log(this.value)
-                ytbModule.search(this.value);
-                return false;
-            })
-        }
-        init();
         return methods;
     })();
 
-    me.search = ytbService.search;
 
-    return me;
+    let module = {};
+
+    module.search = moduleYoutubeApi.search;
+    return module;
 })();
 
-//ytbModule.search('Undead Killer')
