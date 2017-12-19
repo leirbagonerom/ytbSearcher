@@ -1,7 +1,11 @@
-let youtubeModule = (function () {
-    'use strict';
+/*
 
-    let htmlData;
+youtube viewer, powered by Yotutube Data Api.
+create by Leirbag.
+
+*/
+(function () {
+    'use strict';
 
     function httpGet(obj) {
         return new Promise((resolve, reject) => {
@@ -33,9 +37,9 @@ let youtubeModule = (function () {
         textInputSearch.addEventListener('keyup', eventSearch)
     }
 
+    function youtube() {
 
-    const moduleYoutubeApi = (function ytbServ() {
-
+        let htmlData;
         let jsonData = [];
         let requestParams = {};
         let urlBaseApi = "https://www.googleapis.com/youtube/v3/search?";
@@ -55,7 +59,7 @@ let youtubeModule = (function () {
 
             return params;
         };
-        
+
         function searchYoutube(q) {
             console.log("retriving data from Youtube!");
 
@@ -74,37 +78,37 @@ let youtubeModule = (function () {
 
             function loadHtmlData() {
                 console.log('Loading data to HTML');
-    
+
                 htmlData = document.createElement("ul");
-    
+
                 let videos = jsonData.filter(function (obj) { return obj.id.videoId; });
                 let ytbPlayerUrl = "https://www.youtube-nocookie.com/embed/";
-    
+
                 function processItem(item) {
                     let spanTitle = document.createElement('span');
                     spanTitle.innerText = item.snippet.title;
-    
+
                     let thumbnailVideo = document.createElement('img');
                     thumbnailVideo.classList.add("img-thumbnail");
                     thumbnailVideo.src = item.snippet.thumbnails.default.url;
-    
+
                     let viewLink = document.createElement("a");
                     viewLink.innerText = "Ver video";
                     viewLink.href = ytbPlayerUrl + item.id.videoId;
                     viewLink.target = '_blank';
-    
+
                     let listItem = document.createElement("li");
                     listItem.classList.add('list-group-item');
-    
+
                     listItem.appendChild(thumbnailVideo);
                     listItem.appendChild(spanTitle);
                     listItem.appendChild(viewLink);
-    
+
                     htmlData.appendChild(listItem);
                 };
-    
+
                 videos.forEach(processItem);
-    
+
                 document.getElementById("ul-data").innerHTML = htmlData.innerHTML;
             };
 
@@ -114,18 +118,21 @@ let youtubeModule = (function () {
                 .catch(catchError);
         }
 
-        init();
+        
 
         let methods = {};
         methods.search = searchYoutube;
 
         return methods;
-    })();
+    }
 
-
+    const moduleYoutubeApi = youtube();
+    
+    init();//Attach the event handler
+    
     let module = {};
-
     module.search = moduleYoutubeApi.search;
+
     return module;
 })();
 
